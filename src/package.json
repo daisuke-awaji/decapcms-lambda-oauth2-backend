@@ -1,0 +1,19 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prebuild": "npm install",
+    "build": "tsc",
+    "package": "npm prune --production && cp -R node_modules lib/node_modules/"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "simple-oauth2": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/simple-oauth2": "^5.0.5"
+  }
+}
