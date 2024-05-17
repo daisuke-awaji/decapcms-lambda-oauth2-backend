@@ -1,6 +1,6 @@
 import { APIGatewayEventRequestContextV2, APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
 import { AuthorizationCode } from "simple-oauth2";
-import { config } from "./lib/config";
+import { getConfig } from "./lib/config";
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
@@ -17,7 +17,9 @@ export const handler = async (
 
     if (!code) throw new Error(`Missing code ${code}`);
 
-    const client = new AuthorizationCode(config(provider));
+    const config = await getConfig(provider);
+
+    const client = new AuthorizationCode(config);
     const redirect_uri = `https://${Host}/prod/callback?provider=${provider}`;
     const tokenParams = { code, redirect_uri };
     console.log(tokenParams);

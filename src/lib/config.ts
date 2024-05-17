@@ -1,36 +1,50 @@
 export type Provider = "github" | "gitlab";
 export const providers: Provider[] = ["github", "gitlab"];
+import AWS from 'aws-sdk';
 
-export const config = (provider: Provider) => {
+const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME as string;
+
+const decrypt = async (key: string) => {
+  const kms = new AWS.KMS();
+  try {
+    const req = {
+      CiphertextBlob: Buffer.from(key, 'base64'),
+      EncryptionContext: { LambdaFunctionName: functionName },
+    };
+    const data = await kms.decrypt(req).promise();
+    const decryptedValue = data.Plaintext?.toString('ascii');
+    return decryptedValue;
+  } catch (err) {
+    throw err;
+  }
+};
+
+const getConfig = async (provider: Provider): Promise<{ client: { id: string; secret: string }; auth: { tokenHost: string; tokenPath: string; authorizePath: string } }> => {
   if (!providers.includes(provider)) {
     throw new Error(`Unsupported provider ${provider}`);
   }
-  return {
-    client: client[provider],
-    auth: auth[provider],
+
+  const clientConfig = {
+    id: getClientId(provider),
+    secret: await getClientSecret(provider),
   };
+
+  const authConfig = {
+    tokenHost: provider === "github" ? "https://github.com" : "https://gitlab.com",
+    tokenPath: provider === "github" ? "/login/oauth/access_token" : "/oauth/token",
+    authorizePath: provider === "github" ? "/login/oauth/authorize" : "/oauth/authorize",
+  };
+
+  return { client: clientConfig, auth: authConfig };
 };
 
-const auth: Record<Provider, { tokenHost: string; tokenPath: string; authorizePath: string }> = {
-  github: {
-    tokenHost: "https://github.com",
-    tokenPath: "/login/oauth/access_token",
-    authorizePath: "/login/oauth/authorize",
-  },
-  gitlab: {
-    tokenHost: "https://gitlab.com",
-    tokenPath: "/oauth/token",
-    authorizePath: "/oauth/authorize",
-  },
+const getClientId = (provider: Provider): string => {
+  return process.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID`] as string;
 };
 
-const client: Record<Provider, { id: string; secret: string }> = {
-  github: {
-    id: process.env.OAUTH_GITHUB_CLIENT_ID as string,
-    secret: process.env.OAUTH_GITHUB_CLIENT_SECRET as string,
-  },
-  gitlab: {
-    id: process.env.OAUTH_GITLAB_CLIENT_ID as string,
-    secret: process.env.OAUTH_GITLAB_CLIENT_SECRET as string,
-  },
+const getClientSecret = async (provider: Provider): Promise<string> => {
+  const encryptedSecret = process.env[`OAUTH_${provider.toUpperCase()}_CLIENT_SECRET`] as string;
+  return await decrypt(encryptedSecret);
 };
+
+export { getConfig };

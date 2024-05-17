@@ -2,7 +2,7 @@ import { APIGatewayEventRequestContextV2, APIGatewayProxyEventV2, APIGatewayProx
 
 import { AuthorizationCode } from "simple-oauth2";
 import { randomBytes } from "crypto";
-import { config } from "./lib/config";
+import { getConfig } from "./lib/config";
 import { scopes } from "./lib/scopes";
 
 export const randomString = () => randomBytes(32).toString("hex");
@@ -14,7 +14,8 @@ export const handler = async (
   const { Host } = event.headers;
 
   const provider = "github"; // TODO: support gitlab
-  const client = new AuthorizationCode(config(provider));
+  const config = await getConfig(provider);
+  const client = new AuthorizationCode(config);
 
   const state = randomString();
   const authorizationUri = client.authorizeURL({
