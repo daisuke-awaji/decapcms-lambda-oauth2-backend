@@ -26,7 +26,7 @@ You need to create an API application and make note of the Client ID and a Clien
 To save GitHub's OAuth Client ID and Secret in Lambda's environment variables, save the values in Parameter Store in advance.
 
 ```bash
-$ aws ssm put parameter \
+$ aws ssm put-parameter \
     --type 'String' \
     --name '/CDK/DecapCMSOAuthBackend/OAUTH_GITHUB_CLIENT_ID' \
     --value 'df2655731exxxxxxxx'
